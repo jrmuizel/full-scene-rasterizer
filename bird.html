@@ -1,0 +1,15 @@
+<script src="bird.js"></script>
+<canvas></canvas>
+
+<script>
+	Module.canvas = document.querySelectorAll("canvas")[0];
+	_init();
+	var i = 0;
+	function draw() {
+		_drawFrame(i);
+		i++;
+		requestAnimationFrame(draw);
+	}
+	requestAnimationFrame(draw);
+	//_fini();
+</script>

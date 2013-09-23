@@ -1,0 +1,2 @@
+This is a full-scene defered rasterizer. It does 4x4 super-sampling but is much
+faster than drawing the whole scene and then scaling down in final pass.
