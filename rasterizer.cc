@@ -256,7 +256,7 @@ Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point con
 	}
 
 	// how do we deal with edges to the right and left of the canvas?
-	ActiveEdge *e = new (this->edge_arena.alloc(sizeof(ActiveEdge))) ActiveEdge();
+	ActiveEdge *e = new (this->edge_arena.alloc(sizeof(ActiveEdge))) ActiveEdge;
 	e->shape = shape;
 	Edge edge;
 	edge.x1 = start.x * SAMPLE_SIZE;
