@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <vector>
 #include <stdio.h>
+#include <string.h>
 #include "rasterizer.h"
 
 using namespace std;
