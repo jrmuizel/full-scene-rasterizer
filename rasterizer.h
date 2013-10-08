@@ -107,7 +107,7 @@ struct Rasterizer
 {
 	Rasterizer(int width, int height);
 	~Rasterizer() { delete[] edge_starts; };
-	void add_edge(Point start, Point end, Shape *shape, bool curve = false, Point control = Point());
+	void add_edge(Point start, Point end, Shape *shape, bool curve = false, Point control = Point(0,0));
 	void add_edges(Point *p, int count, Shape *shape);
         void insert_starting_edges();
 	void step_edges();
