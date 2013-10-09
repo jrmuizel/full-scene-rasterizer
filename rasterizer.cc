@@ -314,8 +314,8 @@ Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point con
 
 		// compute the first next_x,y
 		e->count--;
-		e->next_x = (e->fullx) + e->dx/(1<<e->shift);
-		e->next_y = (cury*65536) + e->dy/(1<<e->shift);
+		e->next_x = (e->fullx) + (e->dx>>e->shift);
+		e->next_y = (cury*65536) + (e->dy>>e->shift);
 		e->dx += e->ddx;
 		e->dy += e->ddy;
 
