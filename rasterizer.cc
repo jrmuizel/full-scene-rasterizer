@@ -250,8 +250,7 @@ Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point con
 	//static int count;
 	//printf("edge count: %d\n",++count);
 	// order the points from top to bottom
-	if ((end.y < start.y) ||
-	    ((end.y == start.y) && (end.x < start.y))) {
+	if (end.y < start.y) {
 		swap(start, end);
 	}
 
