@@ -243,7 +243,9 @@ static int compute_curve_steps(Edge *e)
 
 #define SAMPLE_SIZE 4
 #define SAMPLE_SHIFT 2
-// An example number of edges is 7422
+// An example number of edges is 7422 but
+// can go as high as edge count: 374640
+// with curve count: 67680
 void
 Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point control)
 {
