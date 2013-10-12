@@ -771,8 +771,6 @@ Rasterizer::paint_spans()
 			w--;
 		}
 		if (w >=4 ) {
-			// finalize the last bit of drawing
-
 			uint32_t value;
 			Intermediate full = c;
 			full.accumulate(c);
@@ -781,19 +779,11 @@ Rasterizer::paint_spans()
 			value = full.finalize();
 
 			while (w >= 8) {
-				// this is some very ugly that avoids the shift
 				*output.buf++ = value;
 				*output.buf++ = value;
 				w-=8;
-#if 0
-				*(uint32_t*)(&(((char*)p.buf)[x+8])) = value;
-				*(uint32_t*)(&(((char*)p.buf)[x+12])) = value;
-				x+=16;
-				w-=16;
-#endif
 			}
 			if (w >= 4) {
-				// this is some very ugly that avoids the shift
 				*output.buf++ = value;
 				w-=4;
 			}
