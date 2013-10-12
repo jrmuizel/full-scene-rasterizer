@@ -579,12 +579,25 @@ void Rasterizer::scan_edges()
 	this->spans[this->cur_y % 4] = s;
 
 	ActiveEdge *edge = this->active_edges;
+	// handle edges that begin to the left of the bitmap
+	while (edge && edge->fullx < 0) {
+		// we only need to keep track of the shapes that are live starting at 0
+		if (++edge->shape->winding & 1) {
+			// we're entering a shape
+			// mark the starting place in the shape
+			edge->shape->span_begin = s;
+		}
+		// leaving a shape can be ignored because we'll clobber shape->span_begin when
+		// we enter it again
+		edge = edge->next;
+	}
+
 	while (edge) {
 		// XXX: there's no point in adding spans beyond the end
 		// it might be nice to move this kind of test out of scan
 		// edges so that we only start the edge when it enters the
 		// draw area.
-		if ((edge->fullx>>16) > width)
+		if ((edge->fullx>>16) >= width)
 			break;
 
 		// finish the last span
@@ -606,7 +619,7 @@ void Rasterizer::scan_edges()
 				// only color the span if starts before this span
 				if (q != s_next)
 				{
-					// we usually only loop once because content does
+					// we usually only loop once because content tends
 					// not overlap
 					while (q) {
 						q->add_color(edge->shape);
@@ -623,6 +636,27 @@ void Rasterizer::scan_edges()
 		s = s_next;
 
 	}
+
+	// finish up any remaining edges >= width
+	while (edge) {
+		if (++edge->shape->winding & 1) {
+			// any new beginings can be ignored
+			edge->shape->span_begin = nullptr;
+		} else {
+			// we're exiting a shape
+			// add the color to all the spans starting at
+			// span_begin
+			Span *q = edge->shape->span_begin;
+			// we usually only loop once because content tends
+			// not overlap
+			while (q) {
+				q->add_color(edge->shape);
+				q = q->next;
+			}
+		}
+		edge = edge->next;
+	}
+
 	// mark the end of the final span
 	s->x_end = width;
 }
