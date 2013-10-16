@@ -57,9 +57,8 @@ struct Intermediate
 		} else {
 			// a fast approximation of OVER
 			int alpha = 0xff - (c.ag >> 16);
-			this->ag = ((this->ag * alpha) >> 8) & 0xff00ff + c.ag;
-			this->rb = ((this->rb * alpha) >> 8) & 0xff00ff + c.rb;
-			assert(0);
+			this->ag = (((this->ag * alpha) >> 8) & 0xff00ff) + c.ag;
+			this->rb = (((this->rb * alpha) >> 8) & 0xff00ff) + c.rb;
 		}
 		return *this;
 	}
@@ -156,10 +155,10 @@ struct PathBuilder
 		Color c;
 		shape->fill_style = 0;
 		// XXX: support alpha
-		c.r=r*255;
-		c.g=g*255;
-		c.b=b*255;
-		c.a=255;
+		c.r=r*255*a;
+		c.g=g*255*a;
+		c.b=b*255*a;
+		c.a=a*255;
 		shape->color.assign(c);
 		shape->z = z++;
 		shape->winding = 0;

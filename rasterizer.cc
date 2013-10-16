@@ -523,9 +523,9 @@ Span::add_color(Shape *s)
 	}
 
 	// if the top shape is opaque just discard
-	if ((shapes[shape_count-1]->color.ag & 0xff0000) == 0xff0000)
+	if ((shapes[shape_count-1]->color.ag & 0xff0000) == 0xff0000 && shapes[shape_count-1]->z > s->z)
 		return;
-	assert(0);
+
 	// if we're above everything else
 	if (shapes[shape_count-1]->z < s->z) {
 		shapes[shape_count++] = s;
