@@ -85,14 +85,24 @@ struct Intermediate
 
 
 struct Span;
+struct Gradient
+{
+	Intermediate color;
+	Intermediate eval(int x, int y);
+};
 
 struct Shape
 {
+	Shape() {}
 	int fill_style;
 	bool opaque;
 	// we can union the different fill style implementations here.
 	// e.g. a pointer to an image fill or gradient fill
-	Intermediate color;
+	union {
+		Intermediate color;
+		Gradient *gradient;
+	};
+	void (*fill)(Shape *s, uint32_t *buf, int x, int y, int w);
 	int winding;
 	int z;
 #ifndef NDEBUG
@@ -101,6 +111,8 @@ struct Shape
 	Span *span_begin;
 };
 
+extern void solid_fill(Shape *s, uint32_t *buf, int x, int y, int w);
+extern void gradient_fill(Shape *s, uint32_t *buf, int x, int y, int w);
 
 struct ActiveEdge;
 struct Rasterizer
@@ -133,7 +145,6 @@ struct Rasterizer
 	ArenaPool edge_arena;
 };
 
-
 struct PathBuilder
 {
 	PathBuilder()
@@ -146,10 +157,11 @@ struct PathBuilder
 	Shape *shape;
 	Rasterizer *r;
 	ArenaPool shape_arena;
+	ArenaPool gradient_arena;
 	int z;
 	void begin(float r, float g, float b, float a)
 	{
-		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape();
+		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
 #ifndef NDEBUG
 		shape->next = 0;
 #endif
@@ -165,8 +177,31 @@ struct PathBuilder
 		shape->color.assign(c);
 		shape->z = z++;
 		shape->winding = 0;
+		shape->fill = solid_fill;
 
 	}
+
+	void begin_gradient(float r, float g, float b, float a)
+	{
+		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
+#ifndef NDEBUG
+		shape->next = 0;
+#endif
+		Color c;
+		shape->fill_style = 1;
+		shape->fill = gradient_fill;
+		shape->gradient = new (this->gradient_arena.alloc(sizeof(Gradient))) Gradient;
+		c.r=r*255*a;
+		c.g=g*255*a;
+		c.b=b*255*a;
+		c.a=a*255;
+		shape->opaque = false;
+		shape->gradient->color.assign(c);
+		shape->z = z++;
+		shape->winding = 0;
+
+	}
+
 	void close()
 	{
 		r->add_edge(current_point, first_point, shape);

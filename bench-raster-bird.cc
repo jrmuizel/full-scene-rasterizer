@@ -171,6 +171,20 @@ void drawFrame(int angle)
 				m.x0 += 400;
 			m.y0 += 100;
 		}
+#if 1
+		p.begin_gradient(1, 0, 0, .5);
+		Point q;
+		q = {1, 1};
+		p.move_to(q);
+		q = {1, 300};
+		p.line_to(q);
+		q = {300, 300};
+		p.line_to(q);
+		q = {300, 1};
+		p.line_to(q);
+		q = {1, 1};
+		p.line_to(q);
+#endif
 		//start = mach_absolute_time();
 		rast->rasterize();
 #ifdef EMCC

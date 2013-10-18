@@ -703,6 +703,7 @@ Rasterizer::sort_edges()
 }
 
 // we should compute this in reverse
+inline __attribute__((always_inline))
 Intermediate
 Span::compute_color(int x, int y)
 {
@@ -710,6 +711,8 @@ Span::compute_color(int x, int y)
 	for (int i=0; i<shape_count; i++) {
 		if (shapes[i]->fill_style == 0)
 			intermediate = intermediate.over(shapes[i]->color);
+		else
+			intermediate = intermediate.over(shapes[i]->gradient->eval(x>>SAMPLE_SHIFT, y>>SAMPLE_SHIFT));
 	}
 	return intermediate;
 }
@@ -736,6 +739,26 @@ struct SubpixelQueue
 	}
 };
 
+static bool is_coherent(Span *s1, Span *s2)
+{
+	if (s1->shape_count != s2->shape_count)
+		return false;
+	for (int i=0; i < s1->shape_count; i++) {
+		if (s1->shapes[i] != s2->shapes[i])
+			return false;
+	}
+	return true;
+}
+
+static bool is_solid(Span *s)
+{
+	for (int i=0; i < s->shape_count; i++) {
+		if (s->shapes[i]->fill_style != 0)
+			return false;
+	}
+	return true;
+}
+
 void
 Rasterizer::paint_spans()
 {
@@ -759,74 +782,107 @@ Rasterizer::paint_spans()
 		if (s4->x_end < min)
 			min = s4->x_end;
 
-		bool solid = false;
-		Shape *s = nullptr;
-		// check to see if all of the shapes are the same
-		// XXX: we need to improve this to support
-		// more than 1 shape count to handle bitmap transparency
-		// with any kind of speed. I expect that this would be better
-		// handled by using single span list that we
-		// split instead of building 4
-		if (s1->shape_count == 1 &&
-		    s2->shape_count == 1 &&
-		    s3->shape_count == 1 &&
-		    s4->shape_count == 1) {
-			s = s1->shapes[0];
-			if (s2->shapes[0] == s &&
-			    s3->shapes[0] == s &&
-			    s4->shapes[0] == s) {
-				solid = true;
-			}
-		}
 
+		int w = min - start_x;
 		int x = start_x;
-		if (solid) {
-			if (s->fill_style == 0) {
-				c = s->color;
-				c.accumulate(c);
-				c.accumulate(c);
+		if (1) {
+#if 0
+			bool solid = true;
+			for (int i=0; i<4; i++) {
+				solid = solid && is_solid(this->spans[i]);
+				if (!solid)
+					break;
+			}
+#endif
+			// we end up recomputing the solidness of spans when ever not all of the spans change
+			// we could move this calculation into add_color to avoid that
+			bool solid = is_solid(s1) && is_solid(s2) && is_solid(s3) && is_solid(s4);
+			bool coherent = is_coherent(s1, s2) && is_coherent(s1, s3) && is_coherent(s1, s4);
+			// check to see if all of the shapes are the same
+
+			if (solid) {
+				Intermediate c;
+				if (coherent && s1->shape_count == 1) {
+					c = s1->shapes[0]->color;
+					c.accumulate(c);
+					c.accumulate(c);
+				} else {
+					c = s1->compute_color(x, cur_y-3);
+					c.accumulate(s2->compute_color(x, cur_y-2));
+					c.accumulate(s3->compute_color(x, cur_y-1));
+					c.accumulate(s4->compute_color(x, cur_y));
+				}
+				while (w && output.count) {
+					output.queue(c);
+					w--;
+				}
+				if (w >=4 ) {
+					uint32_t value;
+					Intermediate full = c;
+					full.accumulate(c);
+					full.accumulate(c);
+					full.accumulate(c);
+					value = full.finalize();
+
+					while (w >= 8) {
+						*output.buf++ = value;
+						*output.buf++ = value;
+						w-=8;
+					}
+					if (w >= 4) {
+						*output.buf++ = value;
+						w-=4;
+					}
+				}
+
+				while (w) {
+					output.queue(c);
+					w--;
+				}
 			} else {
-				assert(0);
+				while (w && output.count) {
+					c = s1->compute_color(x, cur_y-3);
+					c.accumulate(s2->compute_color(x, cur_y-2));
+					c.accumulate(s3->compute_color(x, cur_y-1));
+					c.accumulate(s4->compute_color(x, cur_y));
+					output.queue(c);
+					w--;
+					x++;
+				}
+				if (coherent && w >=4) {
+					//XXX we can drop this memset if we always have a solid color fill under everything
+					memset(output.buf, 0, w);
+					for (int i=0; i<s1->shape_count; i++) {
+						s1->shapes[i]->fill(s1->shapes[i], output.buf, x>>SAMPLE_SHIFT, cur_y>>SAMPLE_SHIFT, w);
+					}
+					output.buf += (w>>2);
+					x+=w;
+					w = w&3;
+				}
+				while (w) {
+					c = s1->compute_color(x, cur_y-3);
+					c.accumulate(s2->compute_color(x, cur_y-2));
+					c.accumulate(s3->compute_color(x, cur_y-1));
+					c.accumulate(s4->compute_color(x, cur_y));
+
+					output.queue(c);
+					w--;
+					x++;
+				}
+
 			}
 		} else {
-			c = s1->compute_color(x, cur_y-3);
-			c.accumulate(s2->compute_color(x, cur_y-2));
-			c.accumulate(s3->compute_color(x, cur_y-1));
-			c.accumulate(s4->compute_color(x, cur_y));
-		}
-		//printf("spans %p-%d,%p-%d,%p-%d,%p-%d\n", s1, s1->x_end, s2, s2->x_end, s3, s3->x_end, s4, s4->x_end);
-		//printf(" %d,%d-%d,%d,%d,%d", start_x, min, s1->compute_color().a, s2->compute_color().a, s3->compute_color().a, s4->compute_color().a);
-		//printf(" %d,%d - %d", start_x, min, c.a);
-
-		// XXX: handle non-solid colors
-		int w = min - start_x;
-		while (w && output.count) {
-			output.queue(c);
-			w--;
-		}
-		if (w >=4 ) {
-			uint32_t value;
-			Intermediate full = c;
-			full.accumulate(c);
-			full.accumulate(c);
-			full.accumulate(c);
-			value = full.finalize();
-
-			while (w >= 8) {
-				*output.buf++ = value;
-				*output.buf++ = value;
-				w-=8;
-			}
-			if (w >= 4) {
-				*output.buf++ = value;
-				w-=4;
+			while (w) {
+				c = s1->compute_color(x, cur_y-3);
+				c.accumulate(s2->compute_color(x, cur_y-2));
+				c.accumulate(s3->compute_color(x, cur_y-1));
+				c.accumulate(s4->compute_color(x, cur_y));
+				output.queue(c);
+				w--;
+				x++;
 			}
 		}
 
-		while (w) {
-			output.queue(c);
-			w--;
-		}
 
 		// we could compute and subtract here or we need some different solution
 		if (s1->x_end == min)
@@ -871,5 +927,39 @@ Rasterizer::rasterize() {
 	}
 	edge_arena.reset();
 	// printf("comparisons: %d\n", comparisons);
+}
+
+void solid_fill(Shape *s, uint32_t *buf, int x, int y, int w)
+{
+	uint32_t c = s->color.finalize_unaccumulated();
+	while (w >= 4) {
+		*buf++ = c;
+		w-=4;
+	}
+}
+
+void gradient_fill(Shape *s, uint32_t *buf, int x, int y, int w)
+{
+	if (x > 200)
+		x = 200;
+	while (w >= 4) {
+		uint32_t c = 0xff000000 | (x)<<16 | (255-x)<<8;
+		uint32_t a = c >> 24;
+		*buf++ = c;//0x99009900;//c;
+		w-=4;
+		x++;
+		if (x > 200)
+			x = 200;
+	}
+}
+
+Intermediate Gradient::eval(int x, int y)
+{
+	if (x > 200)
+		x = 200;
+	Intermediate ret;
+	ret.ag = 0xff0000 | (255-x);
+	ret.rb = x << 16;
+	return ret;
 }
 
