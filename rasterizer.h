@@ -89,6 +89,7 @@ struct Span;
 struct Shape
 {
 	int fill_style;
+	bool opaque;
 	// we can union the different fill style implementations here.
 	// e.g. a pointer to an image fill or gradient fill
 	Intermediate color;
@@ -159,6 +160,8 @@ struct PathBuilder
 		c.g=g*255*a;
 		c.b=b*255*a;
 		c.a=a*255;
+		if (c.a == 255)
+			shape->opaque = true;
 		shape->color.assign(c);
 		shape->z = z++;
 		shape->winding = 0;

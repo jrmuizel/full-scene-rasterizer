@@ -516,14 +516,14 @@ Span::add_color(Shape *s)
 	}
 
 	// if opaque and a higher z then just replace
-	if (((s->color.ag & 0xff0000) == 0xff0000) && shapes[shape_count-1]->z < s->z) {
+	if (s->opaque && shapes[shape_count-1]->z < s->z) {
 		shapes[0] = s;
 		shape_count = 1;
 		return;
 	}
 
 	// if the top shape is opaque just discard
-	if ((shapes[shape_count-1]->color.ag & 0xff0000) == 0xff0000 && shapes[shape_count-1]->z > s->z)
+	if (shapes[shape_count-1]->opaque && shapes[shape_count-1]->z > s->z)
 		return;
 
 	// if we're above everything else
