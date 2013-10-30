@@ -738,7 +738,35 @@ struct SubpixelQueue
 		}
 	}
 };
-
+#define MULTI
+#ifdef MULTI
+#if 0
+static bool is_coherent(Span *s1, Span *s2, Span *s3, Span *s4)
+{
+	if (s1->shape_count != s2->shape_count || s1->shape_count != s3->shape_count || s1->shape_count != s4->shape_count)
+		return false;
+	for (int i=0; i < s1->shape_count; i++) {
+		if (s1->shapes[i] != s2->shapes[i] | s1->shapes[i] != s3->shapes[i] | s1->shapes[i] != s4->shapes[i])
+			return false;
+	}
+	return true;
+}
+#else
+// we are usually coherent so we don't wat to shortcut this function more than necessary
+bool is_coherent(Span *s1, Span *s2, Span *s3, Span *s4)
+{
+	if (s1->shape_count != s2->shape_count | s1->shape_count != s3->shape_count | s1->shape_count != s4->shape_count)
+		return false;
+	bool coherent = true;
+	for (int i=0; i < s1->shape_count; i++) {
+		coherent = coherent & (s1->shapes[i] == s2->shapes[i]);
+		coherent = coherent & (s1->shapes[i] == s3->shapes[i]);
+		coherent = coherent & (s1->shapes[i] == s4->shapes[i]);
+	}
+	return coherent;
+}
+#endif
+#else
 static bool is_coherent(Span *s1, Span *s2)
 {
 	if (s1->shape_count != s2->shape_count)
@@ -749,6 +777,8 @@ static bool is_coherent(Span *s1, Span *s2)
 	}
 	return true;
 }
+#endif
+
 
 static bool is_solid(Span *s)
 {
@@ -797,7 +827,11 @@ Rasterizer::paint_spans()
 			// we end up recomputing the solidness of spans when ever not all of the spans change
 			// we could move this calculation into add_color to avoid that
 			bool solid = is_solid(s1) && is_solid(s2) && is_solid(s3) && is_solid(s4);
+#ifdef MULTI
+			bool coherent = is_coherent(s1, s2, s3, s4);
+#else
 			bool coherent = is_coherent(s1, s2) && is_coherent(s1, s3) && is_coherent(s1, s4);
+#endif
 			// check to see if all of the shapes are the same
 
 			if (solid) {
