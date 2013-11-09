@@ -712,7 +712,7 @@ Span::compute_color(int x, int y)
 		if (shapes[i]->fill_style == 0)
 			intermediate = intermediate.over(shapes[i]->color);
 		else
-			intermediate = intermediate.over(shapes[i]->gradient->eval(x>>SAMPLE_SHIFT, y>>SAMPLE_SHIFT));
+			intermediate = intermediate.over(shapes[i]->eval(shapes[i], x>>SAMPLE_SHIFT, y>>SAMPLE_SHIFT));
 	}
 	return intermediate;
 }
@@ -987,7 +987,7 @@ void gradient_fill(Shape *s, uint32_t *buf, int x, int y, int w)
 	}
 }
 
-Intermediate Gradient::eval(int x, int y)
+Intermediate gradient_eval(Shape *s, int x, int y)
 {
 	if (x > 200)
 		x = 200;

@@ -88,7 +88,6 @@ struct Span;
 struct Gradient
 {
 	Intermediate color;
-	Intermediate eval(int x, int y);
 };
 
 struct Shape
@@ -102,9 +101,10 @@ struct Shape
 		Intermediate color;
 		Gradient *gradient;
 	};
-	void (*fill)(Shape *s, uint32_t *buf, int x, int y, int w);
 	int winding;
 	int z;
+	void (*fill)(Shape *s, uint32_t *buf, int x, int y, int w);
+	Intermediate (*eval)(Shape *s, int x, int y);
 #ifndef NDEBUG
 	Shape *next;
 #endif
@@ -113,6 +113,7 @@ struct Shape
 
 extern void solid_fill(Shape *s, uint32_t *buf, int x, int y, int w);
 extern void gradient_fill(Shape *s, uint32_t *buf, int x, int y, int w);
+extern Intermediate gradient_eval(Shape *s, int x, int y);
 
 struct ActiveEdge;
 struct Rasterizer
@@ -190,6 +191,7 @@ struct PathBuilder
 		Color c;
 		shape->fill_style = 1;
 		shape->fill = gradient_fill;
+		shape->eval = gradient_eval;
 		shape->gradient = new (this->gradient_arena.alloc(sizeof(Gradient))) Gradient;
 		c.r=r*255*a;
 		c.g=g*255*a;
