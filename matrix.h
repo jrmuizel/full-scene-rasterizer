@@ -1,3 +1,6 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 #include <math.h>
 struct Matrix
 {
@@ -40,4 +43,4 @@ struct Matrix
 	}
 };
 
-
+#endif

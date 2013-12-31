@@ -10,6 +10,8 @@ struct Point
 	float x;
 	float y;
 };
+#include "matrix.h"
+#include "fixedpoint.h"
 
 struct Color
 {
@@ -38,6 +40,14 @@ struct Intermediate
 
 	Intermediate() : ag(0), rb(0)
 	{
+	}
+
+	static Intermediate expand(uint32_t color)
+	{
+		Intermediate i;
+		i.ag = (color>>8) & 0xff00ff;
+		i.rb = color & 0xff00ff;
+		return i;
 	}
 
 	void accumulate(Intermediate i)
@@ -89,6 +99,21 @@ struct Gradient
 {
 	Intermediate color;
 };
+struct RadialGradient
+{
+	int center_x;
+	int center_y;
+	FixedMatrix matrix;
+	uint32_t lookup[256];
+};
+struct Bitmap
+{
+	int width;
+	int height;
+	FixedMatrix matrix;
+	uint32_t *data;
+};
+
 
 struct Shape
 {
@@ -100,6 +125,8 @@ struct Shape
 	union {
 		Intermediate color;
 		Gradient *gradient;
+		RadialGradient *radial_gradient;
+		Bitmap *bitmap;
 	};
 	int winding;
 	int z;
