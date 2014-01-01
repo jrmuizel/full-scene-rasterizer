@@ -9,6 +9,7 @@
 #endif
 #include <unistd.h>
 #include <new>
+#include "lenna.h"
 
 //#define CANVAS
 #define WEBGL
@@ -172,11 +173,25 @@ void drawFrame(int angle)
 			m.y0 += 100;
 		}
 #if 1
-		p.begin_gradient(1, 0, 0, .5);
+		Bitmap *b = new Bitmap;
+		uint32_t *data = new uint32_t[512*512*4];
+		for (int y=0; y<512; y++) {
+		for (int x=0; x<512; x++) {
+			data[y*512+x] =
+				(0xff<<24) |
+				(lenna[y*512*3+x*3] << 16)|
+				(lenna[y*512*3+x*3+1] << 8) |
+				(lenna[y*512*3+x*3+2]);
+		}
+		}
+		b->data = data;
+		b->width = 512;
+		b->height = 512;
+		p.begin_bitmap(b);
 		Point q;
-		q = {1, 1};
+		q = {20, 1};
 		p.move_to(q);
-		q = {1, 300};
+		q = {1, 420};
 		p.line_to(q);
 		q = {300, 300};
 		p.line_to(q);

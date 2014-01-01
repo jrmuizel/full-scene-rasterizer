@@ -1,142 +1,11 @@
+#ifndef RASTERIZER_H
+#define RASTERIZER_H
 #include <stdint.h>
 #include <stdlib.h>
 #include "skia-utils.h"
 #include "arena.h"
-
-struct Point
-{
-	Point(float x, float y) : x(x), y(y) {}
-	Point() {}
-	float x;
-	float y;
-};
-#include "matrix.h"
-#include "fixedpoint.h"
-
-struct Color
-{
-	int r;
-	int g;
-	int b;
-	int a;
-};
-
-// A class that we use for computation of intermediate
-// color values. We use this to accumulate the results
-// of 4x4 subpixels. For this to be exact we need
-// to be able to store 16*255 or 4 extra bits per component.
-struct Intermediate
-{
-	// use a SWAR approach:
-	//      aaaaaaaa rrrrrrrr gggggggg bbbbbbbb
-	// ag = aaaaaaaaaaaaaaaaa ggggggggggggggggg
-	// rb = rrrrrrrrrrrrrrrrr bbbbbbbbbbbbbbbbb
-	//
-	// This cuts the number of additions in half,
-	// is more compact and easier to finalize,
-	// into back into argb
-	int ag;
-	int rb;
-
-	Intermediate() : ag(0), rb(0)
-	{
-	}
-
-	static Intermediate expand(uint32_t color)
-	{
-		Intermediate i;
-		i.ag = (color>>8) & 0xff00ff;
-		i.rb = color & 0xff00ff;
-		return i;
-	}
-
-	void accumulate(Intermediate i)
-	{
-		ag += i.ag;
-		rb += i.rb;
-	}
-
-	// XXX: this needs to be fleshed out
-	// how do we do 'over' with immediates'
-	Intermediate
-	over(Intermediate c)
-	{
-		if ((c.ag & 0xff0000) == 0xff0000) {
-			this->ag = c.ag;
-			this->rb = c.rb;
-		} else {
-			// a fast approximation of OVER
-			int alpha = 0xff - (c.ag >> 16);
-			this->ag = (((this->ag * alpha) >> 8) & 0xff00ff) + c.ag;
-			this->rb = (((this->rb * alpha) >> 8) & 0xff00ff) + c.rb;
-		}
-		return *this;
-	}
-
-	void
-	assign(Color c)
-	{
-		this->ag = c.a << 16 | c.g;
-		this->rb = c.r << 16 | c.b;
-	}
-
-	uint32_t finalize_unaccumulated() {
-		return (ag << 8) | rb;
-	}
-
-	uint32_t finalize() {
-		uint32_t result;
-		result  = (ag << 4) & 0xff00ff00;
-		result |= (rb >> 4) & 0x00ff00ff;
-		return result;
-	}
-};
-
-
-
-struct Span;
-struct Gradient
-{
-	Intermediate color;
-};
-struct RadialGradient
-{
-	int center_x;
-	int center_y;
-	FixedMatrix matrix;
-	uint32_t lookup[256];
-};
-struct Bitmap
-{
-	int width;
-	int height;
-	FixedMatrix matrix;
-	uint32_t *data;
-};
-
-
-struct Shape
-{
-	Shape() {}
-	int fill_style;
-	bool opaque;
-	// we can union the different fill style implementations here.
-	// e.g. a pointer to an image fill or gradient fill
-	union {
-		Intermediate color;
-		Gradient *gradient;
-		RadialGradient *radial_gradient;
-		Bitmap *bitmap;
-	};
-	int winding;
-	int z;
-	void (*fill)(Shape *s, uint32_t *buf, int x, int y, int w);
-	Intermediate (*eval)(Shape *s, int x, int y);
-#ifndef NDEBUG
-	Shape *next;
-#endif
-	Span *span_begin;
-};
+#include "types.h"
+#include "shader.h"
 
 extern void solid_fill(Shape *s, uint32_t *buf, int x, int y, int w);
 extern void gradient_fill(Shape *s, uint32_t *buf, int x, int y, int w);
@@ -231,6 +100,23 @@ struct PathBuilder
 
 	}
 
+	void begin_bitmap(Bitmap *b)
+	{
+		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
+#ifndef NDEBUG
+		shape->next = 0;
+#endif
+		Color c;
+		shape->fill_style = 1;
+		shape->fill = generic_opaque_fill;
+		shape->eval = bitmap_nearest_eval;
+		shape->bitmap = b;
+		shape->opaque = true;
+		shape->z = z++;
+		shape->winding = 0;
+
+	}
+
 	void close()
 	{
 		r->add_edge(current_point, first_point, shape);
@@ -267,4 +153,4 @@ struct PathBuilder
 	}
 };
 
-
+#endif

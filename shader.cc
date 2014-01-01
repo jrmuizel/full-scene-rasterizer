@@ -3,7 +3,6 @@
 #include <math.h>
 
 #include "shader.h"
-#include "rasterizer.h"
 #define force_inline __attribute__((always_inline))
 #define BILINEAR_INTERPOLATION_BITS 4
 typedef int32_t pixman_fixed_t;
@@ -94,7 +93,7 @@ get_pixel(Bitmap *bitmap, int x, int y)
     if (y > bitmap->height)
 	y = bitmap->height;
 
-    return bitmap->data[y * bitmap->width*4 + x];
+    return bitmap->data[y * bitmap->width + x];
 }
 
 #define pixman_fixed_to_int(f)          ((int) ((f) >> 16))
@@ -139,4 +138,23 @@ Intermediate bitmap_nearest_eval(Shape *s, int x, int y)
     Bitmap *bitmap  = s->bitmap;
     PointFixed p = bitmap->matrix.transform(x, y);
     return Intermediate::expand(get_pixel(bitmap, pixman_fixed_to_int(p.x), pixman_fixed_to_int(p.y)));
+}
+
+void generic_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
+{
+	while (w >= 4) {
+		*buf++ = s->eval(s, x, y).finalize_unaccumulated();
+		w-=4;
+		x++;
+	}
+}
+
+void generic_over_fill(Shape *s, uint32_t *buf, int x, int y, int w)
+{
+	while (w >= 4) {
+		*buf = over(s->eval(s, x, y).finalize_unaccumulated(), *buf);
+		buf++;
+		w-=4;
+		x++;
+	}
 }
