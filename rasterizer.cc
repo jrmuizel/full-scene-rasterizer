@@ -498,6 +498,7 @@ struct Span
 	int x_end;
 	int shape_count;
 	Span *next;
+	bool solid;
 #define SPAN_COLORS 8
 	Shape* shapes[SPAN_COLORS];
 };
@@ -508,10 +509,12 @@ inline __attribute__((always_inline))
 void
 Span::add_color(Shape *s)
 {
+	bool s_solid = s->fill_style == 0;
 	assert(shape_count < SPAN_COLORS);
 	if (!shape_count) {
 		shapes[0] = s;
 		shape_count = 1;
+		solid = s_solid;
 		return;
 	}
 
@@ -519,12 +522,15 @@ Span::add_color(Shape *s)
 	if (s->opaque && shapes[shape_count-1]->z < s->z) {
 		shapes[0] = s;
 		shape_count = 1;
+		solid = s_solid;
 		return;
 	}
 
 	// if the top shape is opaque just discard
 	if (shapes[shape_count-1]->opaque && shapes[shape_count-1]->z > s->z)
 		return;
+
+	solid &= s_solid;
 
 	// if we're above everything else
 	if (shapes[shape_count-1]->z < s->z) {
@@ -782,11 +788,7 @@ static bool is_coherent(Span *s1, Span *s2)
 
 static bool is_solid(Span *s)
 {
-	for (int i=0; i < s->shape_count; i++) {
-		if (s->shapes[i]->fill_style != 0)
-			return false;
-	}
-	return true;
+	return s->solid;
 }
 
 void
@@ -824,9 +826,7 @@ Rasterizer::paint_spans()
 					break;
 			}
 #endif
-			// we end up recomputing the solidness of spans when ever not all of the spans change
-			// we could move this calculation into add_color to avoid that
-			bool solid = is_solid(s1) && is_solid(s2) && is_solid(s3) && is_solid(s4);
+			bool solid = is_solid(s1) & is_solid(s2) & is_solid(s3) & is_solid(s4);
 #ifdef MULTI
 			bool coherent = is_coherent(s1, s2, s3, s4);
 #else
