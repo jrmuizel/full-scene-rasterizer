@@ -107,9 +107,9 @@ struct RadialGradient
 	int center_x;
 	int center_y;
 	FixedMatrix matrix;
+	// using a 257 entry lookup table
+	// lets us use a 1.8 fixed point implementation
 	uint32_t lookup[257];
-	int stops_count;
-	GradientStop *stops;
 };
 
 struct LinearGradient
@@ -120,8 +120,6 @@ struct LinearGradient
 	int y2;
 	FixedMatrix matrix;
 	uint32_t lookup[257];
-	int stops_count;
-	GradientStop *stops;
 };
 
 struct Bitmap
