@@ -28,6 +28,56 @@ Intermediate radial_gradient_eval(Shape *s, int x, int y)
 	return Intermediate::expand(r->lookup[(int)(distance*256)]);
 }
 
+uint32_t lerp(uint32_t a, uint32_t b, int t)
+{
+	uint32_t mask = 0xff00ff;
+	uint32_t brb = ((b & 0xff00ff) * t) >> 8;
+	uint32_t bag = ((b >> 8) & 0xff00ff) * t;
+	t = 256-t;
+	uint32_t arb = ((a & 0xff00ff) * t) >> 8;
+	uint32_t aag = ((a >> 8) & 0xff00ff) * t;
+	uint32_t rb = arb + brb;
+	uint32_t ag = aag + bag;
+	return (rb & mask) | (ag & ~mask);
+}
+
+void
+build_lut(GradientStop *stops, int count, uint32_t *lut)
+{
+	GradientStop *stop;
+	int last_pos = 0;
+	uint32_t last_color, next_color;
+
+	stop = &stops[0];
+	last_color = stop->color;
+	next_color = last_color;
+	int next_pos = 256*stop->position;
+	int i = 0;
+	while (i < 257) {
+		while (next_pos <= i) {
+			stop++;
+			last_color = next_color;
+			if (stop > &stops[count-1]) {
+				stop = &stops[count-1];
+				next_pos = 256;
+				next_color = stop->color;
+				break;
+			}
+			next_pos = 256*stop->position;
+			next_color = stop->color;
+		}
+		int inverse = 256*256/(next_pos-last_pos);
+		int t = 0;
+		// XXX we could actually avoid doing any multiplications inside
+		// this loop by accumulating (next_color - last_color)*inverse
+		for (; i<=next_pos; i++) {
+			lut[i] = lerp(last_color, next_color, t>>8);
+			t += inverse;
+		}
+		last_pos = next_pos;
+	}
+}
+
 /* Inspired by Filter_32_opaque from Skia */
 static force_inline uint32_t
 bilinear_interpolation (uint32_t tl, uint32_t tr,

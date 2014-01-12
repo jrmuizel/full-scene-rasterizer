@@ -95,13 +95,35 @@ struct Gradient
 {
 	Intermediate color;
 };
+
+struct GradientStop
+{
+	float position;
+	uint32_t color;
+};
+
 struct RadialGradient
 {
 	int center_x;
 	int center_y;
 	FixedMatrix matrix;
-	uint32_t lookup[256];
+	uint32_t lookup[257];
+	int stops_count;
+	GradientStop *stops;
 };
+
+struct LinearGradient
+{
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+	FixedMatrix matrix;
+	uint32_t lookup[257];
+	int stops_count;
+	GradientStop *stops;
+};
+
 struct Bitmap
 {
 	int width;
