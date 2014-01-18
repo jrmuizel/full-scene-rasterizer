@@ -11,11 +11,11 @@ typedef int32_t pixman_fixed_t;
 // of 255.
 static inline uint32_t over(uint32_t src, uint32_t dst) {
     uint32_t a = src>>24;
-    a = 255 - a;
+    a = 256 - a;
     uint32_t mask = 0xff00ff;
-    uint32_t rb = ((src & 0xff00ff) * a) >> 8;
-    uint32_t ag = ((src >> 8) & 0xff00ff) * a;
-    return (rb & mask) | (ag & ~mask);
+    uint32_t rb = ((dst & 0xff00ff) * a) >> 8;
+    uint32_t ag = ((dst >> 8) & 0xff00ff) * a;
+    return src + (rb & mask) | (ag & ~mask);
 }
 
 Intermediate radial_gradient_eval(Shape *s, int x, int y)
