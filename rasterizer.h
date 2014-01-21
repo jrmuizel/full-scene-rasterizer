@@ -77,7 +77,7 @@ struct PathBuilder
 		shape->fill = solid_fill;
 
 	}
-
+#if 0
 	void begin_gradient(float r, float g, float b, float a)
 	{
 		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
@@ -99,14 +99,13 @@ struct PathBuilder
 		shape->winding = 0;
 
 	}
-
+#endif
 	void begin_bitmap(Bitmap *b)
 	{
 		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
 #ifndef NDEBUG
 		shape->next = 0;
 #endif
-		Color c;
 		shape->fill_style = 1;
 		shape->fill = generic_opaque_fill;
 		shape->eval = bitmap_nearest_eval;
@@ -116,6 +115,23 @@ struct PathBuilder
 		shape->winding = 0;
 
 	}
+
+	void begin_radial(RadialGradient *r)
+	{
+		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
+#ifndef NDEBUG
+		shape->next = 0;
+#endif
+		shape->fill_style = 1;
+		shape->fill = generic_over_fill;
+		shape->eval = radial_gradient_eval;
+		shape->radial_gradient = r;
+		shape->opaque = false;
+		shape->z = z++;
+		shape->winding = 0;
+
+	}
+
 
 	void close()
 	{

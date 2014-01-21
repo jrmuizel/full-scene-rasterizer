@@ -173,6 +173,22 @@ void drawFrame(int angle)
 			m.y0 += 100;
 		}
 #if 1
+#if 1
+		GradientStop stops[3];
+		stops[0].position = 0.25;
+		stops[1].position = 0.75;
+		stops[2].position = 1;
+		stops[0].color = 0xffff0000;
+		stops[1].color = 0xff00ff00;
+		stops[2].color = 0xaaaaaa00;
+		RadialGradient* g =  new RadialGradient;
+		build_lut(stops, 3, g->lookup);
+		g->center_x = 5;
+		g->center_y = 5;
+		g->matrix.xx = 1 << 15;
+		g->matrix.yy = 1 << 15;
+		p.begin_radial(g);
+#else
 		Bitmap *b = new Bitmap;
 		uint32_t *data = new uint32_t[512*512*4];
 		for (int y=0; y<512; y++) {
@@ -188,6 +204,7 @@ void drawFrame(int angle)
 		b->width = 512;
 		b->height = 512;
 		p.begin_bitmap(b);
+#endif
 		Point q;
 		q = {20, 1};
 		p.move_to(q);

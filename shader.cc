@@ -7,8 +7,9 @@
 #define BILINEAR_INTERPOLATION_BITS 4
 typedef int32_t pixman_fixed_t;
 #define pixman_fixed_1 (1<<16)
+#ifdef APPROX
 // this is an approximation of true 'over' that does a division by 256 instead
-// of 255.
+// of 255. It is the same style of blending that Skia does.
 static inline uint32_t over(uint32_t src, uint32_t dst) {
     uint32_t a = src>>24;
     a = 256 - a;
@@ -18,14 +19,76 @@ static inline uint32_t over(uint32_t src, uint32_t dst) {
     return src + (rb & mask) | (ag & ~mask);
 }
 
+#else
+
+// This is an accurate pixman style 'over'
+#define G_SHIFT 8
+#define RB_MASK 0xff00ff
+#define RB_MASK_PLUS_ONE 0x10000100
+
+// this is essentially ((a*b+128)*257)/65536 but modified to only use 16 bits
+// to do the entire operation.
+static inline uint32_t mul(uint32_t x, uint32_t a)
+{
+	uint32_t t = (x & RB_MASK)*a + 0x80080;
+	x = (t + ((t >> G_SHIFT) & RB_MASK)) >> G_SHIFT;
+	x &= RB_MASK;
+	return x;
+}
+
+static inline uint32_t add(uint32_t x, uint32_t y)
+{
+	uint32_t t = x+y;
+	t |= RB_MASK_PLUS_ONE - ((t >> G_SHIFT) & RB_MASK);
+	x = t & RB_MASK;
+	return x;
+}
+static inline uint32_t over(uint32_t src, uint32_t dst) {
+	uint32_t a = ~src>>24;
+	uint32_t r1, r2, r3;
+	r1 = dst;
+	r2 = src & 0xff00ff;
+	r1 = mul(r1, a);
+	r1 = add(r1, r2);
+
+	r2 = dst >> G_SHIFT;
+	r3 = (src >> G_SHIFT) & 0xff00ff;
+	r2 = mul(r2, a);
+	r2 = add(r2, r3);
+
+	return r1 | (r2 << G_SHIFT);
+}
+#endif
+
 Intermediate radial_gradient_eval(Shape *s, int x, int y)
 {
 	RadialGradient *r = s->radial_gradient;
+	PointFixed p = r->matrix.transform(x, y);
 	// do transform
-	float distance = hypot(x - r->center_x, y - r->center_y);
-	if (distance > 0)
-		distance = 1;
-	return Intermediate::expand(r->lookup[(int)(distance*256)]);
+	int distance = (int)hypot(p.x - (r->center_x<<8), p.y - (r->center_y<<8));
+	distance >>= 8;
+	if (distance > 32768)
+		distance = 32768;
+	return Intermediate::expand(r->lookup[distance>>7]);
+}
+
+Intermediate linear_gradient_eval(Shape *s, int x, int y)
+{
+	LinearGradient *r = s->linear_gradient;
+	PointFixed p = r->matrix.transform(x, y);
+	// do transform
+	int dx = p.x - (r->x1<<8);
+	int dy = p.y - (r->y1<<8);
+	int bx = (r->x2 - r->x1)<<8;
+	int by = (r->y2 - r->y1)<<8;
+	int dp = bx*dx + by*dy;
+
+	// XXX: do we need to divide?
+	int distance = dp>>8;
+	distance >>= 8;
+	if (distance > 32768)
+		distance = 32768;
+	return Intermediate::expand(r->lookup[distance>>7]);
 }
 
 uint32_t lerp(uint32_t a, uint32_t b, int t)

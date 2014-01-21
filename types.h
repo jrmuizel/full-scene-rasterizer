@@ -22,6 +22,8 @@ struct Color
 // color values. We use this to accumulate the results
 // of 4x4 subpixels. For this to be exact we need
 // to be able to store 16*255 or 4 extra bits per component.
+// XXX: we could split out the types for the accumulating ones
+// and the plain values so that they are not confused.
 struct Intermediate
 {
 	// use a SWAR approach:
@@ -63,6 +65,7 @@ struct Intermediate
 			this->rb = c.rb;
 		} else {
 			// a fast approximation of OVER
+			// XXX: should use 256 instead of 0xff
 			int alpha = 0xff - (c.ag >> 16);
 			this->ag = (((this->ag * alpha) >> 8) & 0xff00ff) + c.ag;
 			this->rb = (((this->rb * alpha) >> 8) & 0xff00ff) + c.rb;
@@ -140,7 +143,7 @@ struct Shape
 	// e.g. a pointer to an image fill or gradient fill
 	union {
 		Intermediate color;
-		Gradient *gradient;
+		LinearGradient *linear_gradient;
 		RadialGradient *radial_gradient;
 		Bitmap *bitmap;
 	};
