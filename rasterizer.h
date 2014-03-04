@@ -132,6 +132,20 @@ struct PathBuilder
 
 	}
 
+	void begin_linear(LinearGradient *l)
+	{
+		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
+#ifndef NDEBUG
+		shape->next = 0;
+#endif
+		shape->fill_style = 1;
+		shape->fill = generic_over_fill;
+		shape->eval = linear_gradient_eval;
+		shape->linear_gradient = l;
+		shape->opaque = false;
+		shape->z = z++;
+		shape->winding = 0;
+	}
 
 	void close()
 	{

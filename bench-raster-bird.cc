@@ -181,6 +181,26 @@ void drawFrame(int angle)
 		stops[0].color = 0xffff0000;
 		stops[1].color = 0xff00ff00;
 		stops[2].color = 0xaaaaaa00;
+		LinearGradient* g =  new LinearGradient;
+		build_lut(stops, 3, g->lookup);
+		g->x1 = 5;
+		g->y1 = 5;
+		g->x2 = 50;
+		g->y2 = 50;
+		g->matrix.xy = 1 << 15;
+		g->matrix.yx = 1 << 15;
+		g->matrix.xx = 0 << 15;
+		g->matrix.yy = 0 << 15;
+		p.begin_linear(g);
+
+#elif 0
+		GradientStop stops[3];
+		stops[0].position = 0.25;
+		stops[1].position = 0.75;
+		stops[2].position = 1;
+		stops[0].color = 0xffff0000;
+		stops[1].color = 0xff00ff00;
+		stops[2].color = 0xaaaaaa00;
 		RadialGradient* g =  new RadialGradient;
 		build_lut(stops, 3, g->lookup);
 		g->center_x = 5;

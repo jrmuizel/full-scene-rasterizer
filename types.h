@@ -117,10 +117,6 @@ struct RadialGradient
 
 struct LinearGradient
 {
-	int x1;
-	int y1;
-	int x2;
-	int y2;
 	FixedMatrix matrix;
 	uint32_t lookup[257];
 };

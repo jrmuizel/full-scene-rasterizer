@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <new>
 #include <math.h>
-
+#include <stdio.h>
 #include "shader.h"
 #define force_inline __attribute__((always_inline))
 #define BILINEAR_INTERPOLATION_BITS 4
@@ -76,21 +76,16 @@ Intermediate linear_gradient_eval(Shape *s, int x, int y)
 {
 	LinearGradient *r = s->linear_gradient;
 	PointFixed p = r->matrix.transform(x, y);
-	// do transform
-	int dx = p.x - (r->x1<<8);
-	int dy = p.y - (r->y1<<8);
-	int bx = (r->x2 - r->x1)<<8;
-	int by = (r->y2 - r->y1)<<8;
-	int dp = bx*dx + by*dy;
-
-	// XXX: do we need to divide?
-	int distance = dp>>8;
-	distance >>= 8;
-	if (distance > 32768)
-		distance = 32768;
-	return Intermediate::expand(r->lookup[distance>>7]);
+	int lx = p.x >> 16;
+	if (lx > 0x100)
+		lx = 0x100;
+	if (lx < 0)
+		lx = 0;
+	return Intermediate::expand(r->lookup[lx]);
 }
 
+// we can reduce this to two multiplies
+// http://stereopsis.com/doubleblend.html
 uint32_t lerp(uint32_t a, uint32_t b, int t)
 {
 	uint32_t mask = 0xff00ff;
@@ -140,7 +135,9 @@ build_lut(GradientStop *stops, int count, uint32_t *lut)
 		last_pos = next_pos;
 	}
 }
-
+#undef force_inline
+#define force_inline
+#define static
 /* Inspired by Filter_32_opaque from Skia */
 static force_inline uint32_t
 bilinear_interpolation (uint32_t tl, uint32_t tr,
@@ -174,6 +171,53 @@ bilinear_interpolation (uint32_t tl, uint32_t tr,
 
     return ((lo >> 8) & 0xff00ff) | (hi & ~0xff00ff);
 }
+
+static force_inline uint32_t
+bilinear_interpolation_new (uint32_t tl, uint32_t tr,
+			uint32_t bl, uint32_t br,
+			int distx, int disty)
+{
+    int distxy, distxiy, distixy, distixiy;
+    uint32_t lo, hi;
+
+    distx <<= (4 - BILINEAR_INTERPOLATION_BITS);
+    disty <<= (4 - BILINEAR_INTERPOLATION_BITS);
+
+    uint32_t dt_rb = (tr & 0xff00ff) - (tl & 0xff00ff);
+    uint32_t dt_ag = ((tr >> 8) & 0xff00ff) - ((tl >> 8) & 0xff00ff);
+    uint32_t db_rb = (br & 0xff00ff) - (bl & 0xff00ff);
+    uint32_t db_ag = ((br >> 8) & 0xff00ff) - ((bl >> 8) & 0xff00ff);
+
+    dt_rb *= distx;
+    dt_ag *= distx;
+    db_rb *= distx;
+    db_ag *= distx;
+
+    uint32_t a_rb = (tl & 0xff00ff)<<4;
+    uint32_t a_ag = (tl & 0xff00ff)<<4;
+    uint32_t b_rb = (bl & 0xff00ff)<<4;
+    uint32_t b_ag = (bl & 0xff00ff)<<4;
+
+    a_rb += dt_rb;
+    a_ag += dt_ag;
+    b_rb += db_rb;
+    b_ag += db_ag;
+
+    uint32_t d_rb = b_rb - a_rb;
+    uint32_t d_ag = b_ag - a_ag;
+    a_rb <<= 4;
+    a_ag <<= 4;
+
+    d_rb *= disty;
+    d_ag *= disty;
+
+    a_rb += d_rb;
+    a_ag += d_ag;
+
+    return ((a_rb >> 8) & 0xff00ff) | (a_ag & 0xff00ff00);
+}
+
+
 
 uint32_t clamp(int a, int max)
 {
