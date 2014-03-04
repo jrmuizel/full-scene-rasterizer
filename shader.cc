@@ -84,6 +84,22 @@ Intermediate linear_gradient_eval(Shape *s, int x, int y)
 	return Intermediate::expand(r->lookup[lx]);
 }
 
+void linear_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
+{
+	PointFixed p = r->matrix.transform(x, y);
+	int lx = p.x;
+	int dx = r->matrix.xx;
+	while (w >= 4) {
+		if (lx > 65536)
+			lx = 65536;
+		if (lx < 0)
+			lx = 0;
+		*buf++ = r->lookup[lx>>16];
+		lx += dx;
+		w-=4;
+	}
+}
+
 // we can reduce this to two multiplies
 // http://stereopsis.com/doubleblend.html
 uint32_t lerp(uint32_t a, uint32_t b, int t)
