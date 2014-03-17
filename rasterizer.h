@@ -139,10 +139,10 @@ struct PathBuilder
 		shape->next = 0;
 #endif
 		shape->fill_style = 1;
-		shape->fill = generic_over_fill;
+		shape->fill = linear_opaque_fill;
 		shape->eval = linear_gradient_eval;
 		shape->gradient = l;
-		shape->opaque = false;
+		shape->opaque = true;
 		shape->z = z++;
 		shape->winding = 0;
 	}

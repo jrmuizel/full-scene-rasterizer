@@ -91,8 +91,8 @@ void linear_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
 	int lx = p.x;
 	int dx = r->matrix.xx;
 	while (w >= 4) {
-		if (lx > 65536)
-			lx = 65536;
+		if (lx > 0x1000000)
+			lx = 0x1000000;
 		if (lx < 0)
 			lx = 0;
 		*buf++ = r->lookup[lx>>16];
