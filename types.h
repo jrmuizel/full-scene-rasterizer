@@ -107,8 +107,6 @@ struct GradientStop
 
 struct RadialGradient
 {
-	int center_x;
-	int center_y;
 	FixedMatrix matrix;
 	// using a 257 entry lookup table
 	// lets us use a 1.8 fixed point implementation

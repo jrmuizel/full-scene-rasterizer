@@ -65,7 +65,7 @@ Intermediate radial_gradient_eval(Shape *s, int x, int y)
 	RadialGradient *r = s->radial_gradient;
 	PointFixed p = r->matrix.transform(x, y);
 	// do transform
-	int distance = (int)hypot(p.x - (r->center_x<<8), p.y - (r->center_y<<8));
+	int distance = (int)hypot(p.x, p.y);
 	distance >>= 8;
 	if (distance > 32768)
 		distance = 32768;
@@ -86,6 +86,7 @@ Intermediate linear_gradient_eval(Shape *s, int x, int y)
 
 void linear_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
 {
+	LinearGradient *r = s->linear_gradient;
 	PointFixed p = r->matrix.transform(x, y);
 	int lx = p.x;
 	int dx = r->matrix.xx;
