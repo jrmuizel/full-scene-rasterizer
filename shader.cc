@@ -62,7 +62,7 @@ static inline uint32_t over(uint32_t src, uint32_t dst) {
 
 Intermediate radial_gradient_eval(Shape *s, int x, int y)
 {
-	RadialGradient *r = s->radial_gradient;
+	Gradient *r = s->gradient;
 	PointFixed p = r->matrix.transform(x, y);
 	// do transform
 	int distance = (int)hypot(p.x, p.y);
@@ -74,7 +74,7 @@ Intermediate radial_gradient_eval(Shape *s, int x, int y)
 
 Intermediate linear_gradient_eval(Shape *s, int x, int y)
 {
-	LinearGradient *r = s->linear_gradient;
+	Gradient *r = s->gradient;
 	PointFixed p = r->matrix.transform(x, y);
 	int lx = p.x >> 16;
 	if (lx > 0x100)
@@ -86,7 +86,7 @@ Intermediate linear_gradient_eval(Shape *s, int x, int y)
 
 void linear_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
 {
-	LinearGradient *r = s->linear_gradient;
+	Gradient *r = s->gradient;
 	PointFixed p = r->matrix.transform(x, y);
 	int lx = p.x;
 	int dx = r->matrix.xx;

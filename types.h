@@ -94,10 +94,6 @@ struct Intermediate
 
 
 struct Span;
-struct Gradient
-{
-	Intermediate color;
-};
 
 struct GradientStop
 {
@@ -105,17 +101,11 @@ struct GradientStop
 	uint32_t color;
 };
 
-struct RadialGradient
+struct Gradient
 {
 	FixedMatrix matrix;
 	// using a 257 entry lookup table
 	// lets us use a 1.8 fixed point implementation
-	uint32_t lookup[257];
-};
-
-struct LinearGradient
-{
-	FixedMatrix matrix;
 	uint32_t lookup[257];
 };
 
@@ -137,8 +127,7 @@ struct Shape
 	// e.g. a pointer to an image fill or gradient fill
 	union {
 		Intermediate color;
-		LinearGradient *linear_gradient;
-		RadialGradient *radial_gradient;
+		Gradient *gradient;
 		Bitmap *bitmap;
 	};
 	int winding;

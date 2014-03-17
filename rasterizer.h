@@ -116,7 +116,7 @@ struct PathBuilder
 
 	}
 
-	void begin_radial(RadialGradient *r)
+	void begin_radial(Gradient *r)
 	{
 		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
 #ifndef NDEBUG
@@ -125,14 +125,14 @@ struct PathBuilder
 		shape->fill_style = 1;
 		shape->fill = generic_over_fill;
 		shape->eval = radial_gradient_eval;
-		shape->radial_gradient = r;
+		shape->gradient = r;
 		shape->opaque = false;
 		shape->z = z++;
 		shape->winding = 0;
 
 	}
 
-	void begin_linear(LinearGradient *l)
+	void begin_linear(Gradient *l)
 	{
 		shape = new (this->shape_arena.alloc(sizeof(Shape))) Shape;
 #ifndef NDEBUG
@@ -141,7 +141,7 @@ struct PathBuilder
 		shape->fill_style = 1;
 		shape->fill = generic_over_fill;
 		shape->eval = linear_gradient_eval;
-		shape->linear_gradient = l;
+		shape->gradient = l;
 		shape->opaque = false;
 		shape->z = z++;
 		shape->winding = 0;
