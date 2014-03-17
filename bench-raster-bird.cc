@@ -219,6 +219,7 @@ void drawFrame(int angle)
 		b->height = 512;
 		p.begin_bitmap(b);
 #endif
+#if 0
 		Point q;
 		q = {20, 1};
 		p.move_to(q);
@@ -230,6 +231,7 @@ void drawFrame(int angle)
 		p.line_to(q);
 		q = {1, 1};
 		p.line_to(q);
+#endif
 #endif
 		//start = mach_absolute_time();
 		rast->rasterize();
