@@ -36,6 +36,8 @@ static inline uint32_t mul(uint32_t x, uint32_t a)
 	return x;
 }
 
+// this does a saturating add. It is only necessary to deal
+// with super luminescent pixels
 static inline uint32_t add(uint32_t x, uint32_t y)
 {
 	uint32_t t = x+y;
@@ -63,8 +65,17 @@ static inline uint32_t over(uint32_t src, uint32_t dst) {
 Intermediate radial_gradient_eval(Shape *s, int x, int y)
 {
 	Gradient *r = s->gradient;
+	// we can evaluate the transform incrementally
+	// i.e. x += dx
 	PointFixed p = r->matrix.transform(x, y);
 	// do transform
+	// y*y will be constant
+	// x' = x + dx
+	// x'*x' = (x + dx)*(x + dx)
+	// x'*x' = x*x + 2*x*dx + dx*dx
+	// dx*dx will be constant
+	// 2*x*dx
+	//
 	int distance = (int)hypot(p.x, p.y);
 	distance >>= 8;
 	if (distance > 32768)
@@ -103,6 +114,7 @@ void linear_opaque_fill(Shape *s, uint32_t *buf, int x, int y, int w)
 
 // we can reduce this to two multiplies
 // http://stereopsis.com/doubleblend.html
+// t is 0..256
 uint32_t lerp(uint32_t a, uint32_t b, int t)
 {
 	uint32_t mask = 0xff00ff;
