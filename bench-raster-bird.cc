@@ -256,7 +256,7 @@ void drawFrame(int angle)
 		printf("%0.3f\n", (end-start)/(1000*1000.));
 		char filename[300];
 		sprintf(filename, "out%d.png", angle);
-		write_png(filename, rast->buf, width, height);
+		//write_png(filename, rast->buf, width, height);
 
 #endif
 		rast->reset();
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 {
 
 	init();
-	for (int angle = 0; angle < 10; angle++) {
+	for (int angle = 0; angle < 10000; angle++) {
 		drawFrame(angle);
 	}
 	fini();

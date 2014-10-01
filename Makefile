@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++11 -g -O2 -Wall
+CXXFLAGS=-std=c++11 -g -O2 -Wall -DNDEBUG
 
 bench-raster-bird: bench-raster-bird.o rasterizer.o skia-utils.o shader.o
 	$(CXX) $(CXXFLAGS) $^   -o $@
