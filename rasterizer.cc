@@ -716,9 +716,9 @@ Span::compute_color(int x, int y)
 	Intermediate intermediate;
 	for (int i=0; i<shape_count; i++) {
 		if (shapes[i]->fill_style == 0)
-			intermediate = intermediate.over(shapes[i]->color);
+			intermediate.over(shapes[i]->color);
 		else
-			intermediate = intermediate.over(shapes[i]->eval(shapes[i], x>>SAMPLE_SHIFT, y>>SAMPLE_SHIFT));
+			intermediate.over(shapes[i]->eval(shapes[i], x>>SAMPLE_SHIFT, y>>SAMPLE_SHIFT));
 	}
 	return intermediate;
 }
