@@ -486,6 +486,18 @@ Rasterizer::check_windings()
 //   | S1              S1
 //   ---------------------
 //          x
+//
+// TODO:
+// It's worth exploring switching from 4 linked lists
+// to one linked list that has 4 shape stacks and is
+// split as needed. This will remove the need
+// to traverse the 4 linked lists at the same time
+// which should improve predicted branches and cache
+// locality. It should also let us track coherency and
+// solidness incrementally which avoid duplicate
+// checking when painting. Basically, we make span
+// construction slightly more expensive with the
+// hope that it pays off during span painting time
 
 // we should aim for this to be 64 bytes
 struct Span
