@@ -81,7 +81,6 @@ static inline Sk2Scalar Sk2ScalarInterp(Sk2Scalar A, Sk2Scalar B, Sk2Scalar t) {
     return A + Sk2ScalarMul(B - A, t);
 }
 
-
 static void interp_quad_coords(const Sk2Scalar* src, Sk2Scalar* dst, Sk2Scalar t)
 {
     Sk2Scalar    ab = Sk2ScalarInterp(src[0], src[2], t);
@@ -102,6 +101,9 @@ void Sk2ChopQuadAt(const Sk2Point src[3], Sk2Point dst[5], Sk2Scalar t)
     interp_quad_coords(&src[0].fY, &dst[0].fY, t);
 }
 
+// ensures that the y values are contiguous
+// dst[1].fY = dst[3].fY = dst[2].fY
+// I'm not sure why we need this
 static inline void flatten_double_quad_extrema(Sk2Scalar coords[14])
 {
 	    coords[2] = coords[6] = coords[4];
