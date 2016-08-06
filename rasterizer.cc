@@ -231,7 +231,7 @@ static inline int diff_to_shift(int dx, int dy)
     return ((32 - Sk2CLZ(dist)))>> 1;
 }
 
-// this metric is take from skia
+// this metric is taken from skia
 static int compute_curve_steps(Edge *e)
 {
 	int dx = ((e->control_x << 1) - e->x1 - e->x2);
@@ -498,6 +498,12 @@ Rasterizer::check_windings()
 // checking when painting. Basically, we make span
 // construction slightly more expensive with the
 // hope that it pays off during span painting time
+//
+// Another thing that might be worth exploring
+// is having a cached line buffer, that way we avoid
+// any cache misses during write and can memcpy
+// that buffer to the output row and hope that
+// prefetch does it's job.
 
 // we should aim for this to be 64 bytes
 struct Span
