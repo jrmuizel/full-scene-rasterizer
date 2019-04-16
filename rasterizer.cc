@@ -201,6 +201,7 @@ int Sk2CLZ(uint32_t x) {
     return zeros;
 }
 
+// See also: http://www.flipcode.com/archives/Fast_Approximate_Distance_Functions.shtml
 static inline int cheap_distance(int dx, int dy)
 {
     dx = Sk2Abs32(dx);
