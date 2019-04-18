@@ -75,7 +75,6 @@ struct PathBuilder
 			shape->opaque = true;
 		shape->color.assign(c);
 		shape->z = z++;
-		shape->winding = 0;
 		shape->fill = solid_fill;
 
 	}
@@ -98,7 +97,6 @@ struct PathBuilder
 		shape->opaque = false;
 		shape->gradient->color.assign(c);
 		shape->z = z++;
-		shape->winding = 0;
 
 	}
 #endif
@@ -114,7 +112,6 @@ struct PathBuilder
 		shape->bitmap = b;
 		shape->opaque = true;
 		shape->z = z++;
-		shape->winding = 0;
 
 	}
 
@@ -130,7 +127,6 @@ struct PathBuilder
 		shape->gradient = r;
 		shape->opaque = false;
 		shape->z = z++;
-		shape->winding = 0;
 
 	}
 
@@ -146,7 +142,6 @@ struct PathBuilder
 		shape->gradient = l;
 		shape->opaque = true;
 		shape->z = z++;
-		shape->winding = 0;
 	}
 
 	void close()

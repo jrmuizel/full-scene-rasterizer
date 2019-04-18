@@ -130,7 +130,6 @@ struct Shape
 		Gradient *gradient;
 		Bitmap *bitmap;
 	};
-	int winding;
 	int z;
 	void (*fill)(Shape *s, uint32_t *buf, int x, int y, int w);
 	Intermediate (*eval)(Shape *s, int x, int y);
