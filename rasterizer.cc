@@ -244,6 +244,11 @@ static int compute_curve_steps(Edge *e)
 
 #define SAMPLE_SIZE 4
 #define SAMPLE_SHIFT 2
+
+#define SHIFT   2
+#define SCALE   (1 << SHIFT)
+#define MASK    (SCALE - 1)
+#define SUPER_Mask      ((1 << SHIFT) - 1)
 // An example number of edges is 7422 but
 // can go as high as edge count: 374640
 // with curve count: 67680
@@ -590,100 +595,67 @@ Span::add_color(Shape *s)
 #endif
 }
 
-// XXX: Ideally we want to exploit the fact that there will be a lot of
-// correlation between previous scans of the edge.  For super-sampling we want
-// to advantage of the fact that many of the spans in a run will have large
-// sections where all four scans match up. For now we search for the coherence
-// in paint_spans.
+
+static inline int coverage_to_alpha(int aa)
+{
+    aa <<= 8 - 2*SHIFT;
+    aa -= aa >> (8 - SHIFT - 1);
+    return aa;
+}
+
+
+// Skia does stepping and scanning of edges in a single
+// pass over the edge list.
 void Rasterizer::scan_edges()
 {
-	this->check_windings();
+        ActiveEdge *edge = this->active_edges;
+        int winding = 0;
 
-	// These Spans last until the end of paint_spans()
-	Span *s = new (this->span_arena.alloc(sizeof(Span))) Span();
-	this->spans[this->cur_y % 4] = s;
+        // handle edges that begin to the left of the bitmap
+        while (edge && edge->fullx < 0) {
+                winding++;
+                edge = edge->next;
+        }
 
-	ActiveEdge *edge = this->active_edges;
-	// handle edges that begin to the left of the bitmap
-	while (edge && edge->fullx < 0) {
-		// we only need to keep track of the shapes that are live starting at 0
-		if (++edge->shape->winding & 1) {
-			// we're entering a shape
-			// mark the starting place in the shape
-			edge->shape->span_begin = s;
-		}
-		// leaving a shape can be ignored because we'll clobber shape->span_begin when
-		// we enter it again
-		edge = edge->next;
-	}
+        int prevx = 0;
+        while (edge) {
+                if ((edge->fullx>>16) >= width)
+                        break;
 
-	while (edge) {
-		// XXX: there's no point in adding spans beyond the end
-		// it might be nice to move this kind of test out of scan
-		// edges so that we only start the edge when it enters the
-		// draw area.
-		if ((edge->fullx>>16) >= width)
-			break;
+                if (winding++ & 1) {
+                        blit_span((prevx + (1<<15))>>16, (edge->fullx + (1<<15))>>16);
+                }
+                prevx = edge->fullx;
+                edge = edge->next;
+        }
 
-		// finish the last span
-		s->x_end = edge->fullx>>16;
+        // we don't need to worry about any edges beyond width
+}
 
-		Span *s_next = new (this->span_arena.alloc(sizeof(Span))) Span();
+void Rasterizer::blit_span(int x1, int x2)
+{
+        printf("%d %d\n", x1, x2);
+        int max = (1 << (8 - SHIFT)) - (((cur_y & MASK) + 1) >> SHIFT);
+        uint32_t *b = &buf[cur_y/4*this->width/4 + (x1 >> SHIFT)];
 
-		// loop for all edges at the same co-ordinate
-		do {
-			if (++edge->shape->winding & 1) {
-				// we're entering a shape
-				// mark the starting place in the shape
-				edge->shape->span_begin = s_next;
-			} else {
-				// we're exiting a shape
-				// add the color to all the spans starting at
-				// span_begin
-				Span *q = edge->shape->span_begin;
-				// only color the span if starts before this span
-				if (q != s_next)
-				{
-					// we usually only loop once because content tends
-					// not overlap
-					while (q) {
-						q->add_color(edge->shape);
-						q = q->next;
-					}
-				}
-			}
-			if (edge->next)
-				assert(edge->fullx <= edge->next->fullx);
-			edge = edge->next;
-		} while (edge && (edge->fullx >> 16) == s->x_end);
+        int fb = x1 & SUPER_Mask;
+        int fe = x2 & SUPER_Mask;
+        int n = (x2 >> SHIFT) - (x1 >> SHIFT) - 1;
 
-		s->next = s_next;
-		s = s_next;
-
-	}
-
-	// finish up any remaining edges >= width
-	while (edge) {
-		if (++edge->shape->winding & 1) {
-			// any new beginings can be ignored
-			edge->shape->span_begin = nullptr;
-		} else {
-			// we're exiting a shape
-			// add the color to all the spans starting at
-			// span_begin
-			Span *q = edge->shape->span_begin;
-			// we usually only loop once because content tends
-			// not overlap
-			while (q) {
-				q->add_color(edge->shape);
-				q = q->next;
-			}
-		}
-		edge = edge->next;
-	}
-
-	// mark the end of the final span
-	s->x_end = width;
+        // invert the alpha on the left side
+        if (n < 0) {
+                *b += coverage_to_alpha(fe - fb)*0x1010101;
+        } else {
+                fb = (1 << SHIFT) - fb;
+                *b += coverage_to_alpha(fb) * 0x1010101;
+                b++;
+                while (n) {
+                        *b += max*0x1010101;
+                        b++;
+                        n--;
+                }
+                *b += coverage_to_alpha(fe) * 0x1010101;
+        }
 }
 
 // You may have heard that one should never use a bubble sort.

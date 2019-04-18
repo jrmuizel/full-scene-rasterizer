@@ -1,7 +1,7 @@
 /* a 16.16 fixed point implementation */
 
 typedef int32_t FixedPoint;
-#define SHIFT 16
+const int SHIFT = 16;
 inline FixedPoint mul(FixedPoint a, FixedPoint b)
 {
 	return int64_t(a)*int64_t(b) >> SHIFT;
@@ -17,7 +17,7 @@ struct PointFixed {
 	FixedPoint y;
 };
 
-#define FIXED_1 (1 << SHIFT)
+const int FIXED_1 = (1 << SHIFT);
 // Inverse: most libraries just do adjugate of the matrix multiplied by the inverse
 // of the determinate
 struct FixedMatrix

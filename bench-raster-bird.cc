@@ -285,6 +285,7 @@ void fini()
 int main(int argc, char **argv)
 {
 
+        *(volatile char*)0 = 5;
 	init();
 	for (int angle = 0; angle < 10000; angle++) {
 		drawFrame(angle);

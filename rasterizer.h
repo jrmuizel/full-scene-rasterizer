@@ -27,6 +27,8 @@ struct Rasterizer
 	void reset();
 	void check_windings();
 
+	void blit_span(int x1, int x2);
+
 	ActiveEdge **edge_starts;
 	int width;
 	int height;
