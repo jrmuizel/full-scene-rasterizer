@@ -75,7 +75,7 @@ struct PathBuilder
 			shape->opaque = true;
 		shape->color.assign(c);
 		shape->z = z++;
-		shape->fill = solid_fill;
+		//shape->fill = solid_fill;
 
 	}
 #if 0
