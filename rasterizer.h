@@ -16,8 +16,8 @@ struct Rasterizer
 {
 	Rasterizer(int width, int height);
 	~Rasterizer() { delete[] edge_starts; };
-	void add_edge(Point start, Point end, Shape *shape, bool curve = false, Point control = Point(0,0));
-	void add_edges(Point *p, int count, Shape *shape);
+	void add_edge(Point start, Point end, bool curve = false, Point control = Point(0,0));
+	void add_edges(Point *p, int count);
         void insert_starting_edges();
 	void step_edges();
 	void scan_edges();
@@ -146,7 +146,7 @@ struct PathBuilder
 
 	void close()
 	{
-		r->add_edge(current_point, first_point, shape);
+		r->add_edge(current_point, first_point);
 	}
 	void move_to(Point p)
 	{
@@ -156,7 +156,7 @@ struct PathBuilder
 
 	void line_to(Point p)
 	{
-		r->add_edge(current_point, p, shape);
+		r->add_edge(current_point, p);
 		current_point = p;
 	}
 
@@ -168,13 +168,13 @@ struct PathBuilder
 		Sk2Point out[5];
 		int n = Sk2ChopQuadAtYExtrema(in, out);
 		if (n == 0) {
-			r->add_edge(current_point, p, shape, true, control);
+			r->add_edge(current_point, p, true, control);
 		} else {
 			Point a = {out[1].fX, out[1].fY};
 			Point b = {out[2].fX, out[2].fY};
 			Point c = {out[3].fX, out[3].fY};
-			r->add_edge(current_point, b, shape, true, a);
-			r->add_edge(b, p, shape, true, c);
+			r->add_edge(current_point, b, true, a);
+			r->add_edge(b, p, true, c);
 		}
 		current_point = p;
 	}

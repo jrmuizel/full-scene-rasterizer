@@ -253,7 +253,7 @@ static int compute_curve_steps(Edge *e)
 // can go as high as edge count: 374640
 // with curve count: 67680
 void
-Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point control)
+Rasterizer::add_edge(Point start, Point end, bool curve, Point control)
 {
 	//static int count;
 	//printf("edge count: %d\n",++count);
@@ -264,7 +264,6 @@ Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point con
 
 	// how do we deal with edges to the right and left of the canvas?
 	ActiveEdge *e = new (this->edge_arena.alloc(sizeof(ActiveEdge))) ActiveEdge;
-	e->shape = shape;
 	Edge edge;
 	edge.x1 = start.x * SAMPLE_SIZE;
 	edge.y1 = start.y * SAMPLE_SIZE;
@@ -364,24 +363,6 @@ Rasterizer::add_edge(Point start, Point end, Shape *shape, bool curve, Point con
 	// this works out later during insertion
 	e->next = edge_starts[cury];
 	edge_starts[cury] = e;
-}
-
-void
-Rasterizer::add_edges(Point *p, int count, Shape *shape)
-{
-	for (int i = 1; i < count; i++) {
-		Point start = p[i-1];
-		Point end = p[i];
-		add_edge(start, end, shape);
-	}
-	Point control = {2,12};
-	add_edge(p[count-1], p[0], shape, true, control);
-
-#ifndef NDEBUG
-	// add to shape list
-	shape->next = this->shapes;
-	this->shapes = shape;
-#endif
 }
 
 void
