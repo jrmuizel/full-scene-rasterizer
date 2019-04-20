@@ -255,7 +255,8 @@ static int compute_curve_steps(Edge *e)
 void
 Rasterizer::add_edge(Point start, Point end, bool curve, Point control)
 {
-	//static int count;
+	printf("add edge %f, %f - %f %f\n", start.x, start.y, end.x, end.y);
+        //static int count;
 	//printf("edge count: %d\n",++count);
 	// order the points from top to bottom
 	if (end.y < start.y) {
@@ -412,6 +413,7 @@ Rasterizer::insert_starting_edges()
 	ActiveEdge *e = edge_starts[this->cur_y];
 	// insertion sort all of the new edges
 	while (e) {
+                printf("new edge\n");
 		ActiveEdge **prev_ptr = &new_edges;
 		ActiveEdge *a = new_edges;
 		while (a && e->fullx > a->fullx) {
@@ -439,20 +441,6 @@ Rasterizer::insert_starting_edges()
 		(*prev_ptr)->next = a;
 		prev_ptr = &((*prev_ptr)->next);
 	}
-}
-
-void
-Rasterizer::check_windings()
-{
-#ifdef NDEBUG
-	return;
-#else
-	Shape *s = shapes;
-	while (s) {
-		assert(s->winding == 0);
-		s = s->next;
-	}
-#endif
 }
 
 static inline int coverage_to_alpha(int aa)
@@ -503,10 +491,22 @@ void Rasterizer::blit_span(int x1, int x2)
 
         // invert the alpha on the left side
         if (n < 0) {
-                *b += coverage_to_alpha(fe - fb)*0x1010101;
+                unsigned tmp = (*b & 0xff) + coverage_to_alpha(fe - fb);
+                //tmp = tmp - (tmp >> 8);
+                *b = tmp*0x1010101;
+                if (tmp >= 256) {
+                        printf("%d %d\n", b , coverage_to_alpha(fe - fb));
+                }
+                assert(tmp < 256);
         } else {
                 fb = (1 << SHIFT) - fb;
-                *b += coverage_to_alpha(fb) * 0x1010101;
+                unsigned tmp = (*b & 0xff) + coverage_to_alpha(fb);
+                //tmp = tmp - (tmp >> 8);
+                if (tmp >= 256) {
+                        printf("%d %d\n", b , coverage_to_alpha(fb));
+                }
+                assert(tmp < 256);
+                *b = tmp * 0x1010101;
                 b++;
                 while (n) {
                         *b += max*0x1010101;
@@ -550,6 +550,7 @@ Rasterizer::sort_edges()
 				edge->next = next->next;
 				next->next = edge;
 				swapped = true;
+                                printf("swapped\n");
 			}
 			prev = &edge->next;
 			edge = next;

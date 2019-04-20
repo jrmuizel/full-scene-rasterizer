@@ -69,6 +69,28 @@ void drawFrame(int angle)
 
                 pb.close();
 
+                p.x = 100;
+                p.y = 10;
+                pb.move_to(p);
+                Point c;
+                c.x = 150;
+                c.y = 40;
+                p.x = 200;
+                p.y = 10;
+                pb.quad_to(c, p);
+                c.x = 120;
+                c.y = 100;
+                p.x = 80;
+                p.y = 200;
+                pb.quad_to(c, p);
+                c.x = 150;
+                c.y = 180;
+                p.x = 200;
+                p.y = 200;
+                pb.quad_to(c, p);
+                pb.close();
+
+
 		rast->rasterize();
 		mach_timebase_info_data_t timebaseInfo;
 		// Apple's QA1398 suggests that the output from mach_timebase_info
