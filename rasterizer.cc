@@ -749,7 +749,7 @@ Rasterizer::paint_spans()
 	Span *s4 = this->spans[3];
 	// XXX: having the begin of the span means that things are a little tricky
 	// for computing the color of the current spans
-	while (s1 && s1 && s3 && s4) {
+	while (s1 && s2 && s3 && s4) {
 		Intermediate c;
 		int min = s1->x_end;
 		if (s2->x_end < min)
